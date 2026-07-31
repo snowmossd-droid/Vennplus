@@ -22,12 +22,23 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Locate Gradle project
+        id: locate
+        run: |
+          PROJECT_DIR=$(dirname "$(find . -maxdepth 4 -name settings.gradle -o -maxdepth 4 -name settings.gradle.kts | head -n 1)")
+          if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
+            echo "dir=." >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Project dir: $PROJECT_DIR"
+
       - name: Build debug APK
-        working-directory: TikTokRtmpStreamer
+        working-directory: ${{ steps.locate.outputs.dir }}
         run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: TikTokRtmpStreamer/app/build/outputs/apk/debug/app-debug.apk
+          path: '**/app-debug.apk'

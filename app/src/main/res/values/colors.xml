@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="bubble_bg">#2D7DFF</color>
-    <color name="badge_bg">#FF3B30</color>
-    <color name="badge_text">#FFFFFF</color>
-    <color name="button_bg">#2D7DFF</color>
-</resources>

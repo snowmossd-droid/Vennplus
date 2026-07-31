@@ -44,7 +44,7 @@ dependencies {
 
     // Thư viện RootEncoder: xử lý capture màn hình + mic + encode + đẩy RTMP
     // https://github.com/pedroSG94/RootEncoder
-    implementation 'com.github.pedroSG94.RootEncoder:library:2.8.0'
+    implementation 'com.github.pedroSG94.RootEncoder:library:2.4.9'
 
     // WebSocket client dùng để nhận chat từ chat-bridge (xem README phần Chat Bridge)
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'

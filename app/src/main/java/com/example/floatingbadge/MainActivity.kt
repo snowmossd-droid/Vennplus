@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private lateinit var btnToggle: Button
     private lateinit var sizeLabel: TextView
     private lateinit var sizeSeekBar: SeekBar
+    private var lastSaveTime = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,13 +39,17 @@ class MainActivity : Activity() {
 
         sizeSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (!fromUser) return
                 val sizeDp = minSizeDp + progress
                 sizeLabel.text = getString(R.string.size_label_format, sizeDp)
-                prefs.edit().putInt(PrefsKeys.BUBBLE_SIZE_DP, sizeDp).apply()
-
-                // Nếu icon nổi đang bật, cập nhật kích thước ngay lập tức
-                if (OverlayService.isRunning) {
-                    startService(Intent(this@MainActivity, OverlayService::class.java))
+                
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastSaveTime > 200) {
+                    prefs.edit().putInt(PrefsKeys.BUBBLE_SIZE_DP, sizeDp).apply()
+                    if (OverlayService.isRunning) {
+                        startService(Intent(this@MainActivity, OverlayService::class.java))
+                    }
+                    lastSaveTime = currentTime
                 }
             }
 
@@ -85,7 +90,7 @@ class MainActivity : Activity() {
             } else {
                 Toast.makeText(
                     this,
-                    "Cần cấp quyền \"hiển thị đè lên ứng dụng khác\" để dùng tính năng này",
+                    "Cần cấp quyền hiển thị đè lên ứng dụng khác để dùng tính năng này",
                     Toast.LENGTH_LONG
                 ).show()
             }

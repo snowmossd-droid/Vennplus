@@ -86,7 +86,7 @@ class StreamForegroundService : Service(), ConnectChecker {
         }
 
         val prepared = rtmpDisplay?.prepareVideo(
-            VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FPS, VIDEO_BITRATE, 0
+            VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FPS, VIDEO_BITRATE, 0, 320
         ) == true && rtmpDisplay?.prepareAudio(AUDIO_BITRATE, AUDIO_SAMPLE_RATE, true) == true
 
         if (prepared) {

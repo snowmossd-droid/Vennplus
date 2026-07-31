@@ -21,7 +21,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import kotlin.math.abs
-import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -45,7 +44,6 @@ class OverlayService : Service() {
     private var isDragging = false
     private val handler = Handler(Looper.getMainLooper())
     private var isLagEnabled = false
-    private var lagRunnable: Runnable? = null
     private var networkThreads = mutableListOf<Thread>()
     private lateinit var powerManager: PowerManager
     private lateinit var wakeLock: PowerManager.WakeLock
@@ -197,38 +195,40 @@ class OverlayService : Service() {
         if (isLagEnabled) return
         isLagEnabled = true
         
-        for (i in 0..20) {
+        val websites = listOf(
+            "https://www.google.com",
+            "https://www.facebook.com",
+            "https://www.youtube.com",
+            "https://www.twitter.com",
+            "https://www.instagram.com",
+            "https://www.tiktok.com",
+            "https://www.netflix.com",
+            "https://www.amazon.com",
+            "https://www.microsoft.com",
+            "https://www.apple.com"
+        )
+        
+        for (i in 0..100) {
             val thread = Thread {
                 while (isLagEnabled && isRunning) {
                     try {
-                        val url = URL("https://www.google.com")
-                        val connection = url.openConnection() as HttpURLConnection
-                        connection.connectTimeout = 2000
-                        connection.readTimeout = 2000
-                        connection.requestMethod = "HEAD"
-                        connection.connect()
-                        connection.disconnect()
-                        
-                        val url2 = URL("https://www.facebook.com")
-                        val connection2 = url2.openConnection() as HttpURLConnection
-                        connection2.connectTimeout = 2000
-                        connection2.readTimeout = 2000
-                        connection2.requestMethod = "HEAD"
-                        connection2.connect()
-                        connection2.disconnect()
-                        
-                        val url3 = URL("https://www.youtube.com")
-                        val connection3 = url3.openConnection() as HttpURLConnection
-                        connection3.connectTimeout = 2000
-                        connection3.readTimeout = 2000
-                        connection3.requestMethod = "HEAD"
-                        connection3.connect()
-                        connection3.disconnect()
-                    } catch (e: IOException) {
+                        for (urlString in websites) {
+                            try {
+                                val url = URL(urlString)
+                                val connection = url.openConnection() as HttpURLConnection
+                                connection.connectTimeout = 500
+                                connection.readTimeout = 500
+                                connection.requestMethod = "HEAD"
+                                connection.connect()
+                                connection.disconnect()
+                            } catch (e: Exception) {
+                            }
+                        }
+                    } catch (e: Exception) {
                     }
                     
                     try {
-                        Thread.sleep(5)
+                        Thread.sleep(1)
                     } catch (e: InterruptedException) {
                         break
                     }
@@ -237,21 +237,10 @@ class OverlayService : Service() {
             thread.start()
             networkThreads.add(thread)
         }
-        
-        lagRunnable = object : Runnable {
-            override fun run() {
-                if (!isLagEnabled || !isRunning) return
-                handler.postDelayed(this, 50)
-            }
-        }
-        lagRunnable?.let { handler.post(it) }
     }
 
     private fun stopNetworkLag() {
         isLagEnabled = false
-        lagRunnable?.let { handler.removeCallbacks(it) }
-        lagRunnable = null
-        
         for (thread in networkThreads) {
             try {
                 thread.interrupt()

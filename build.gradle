@@ -10,13 +10,9 @@ buildscript {
     }
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url 'https://jitpack.io' } // cần cho thư viện RootEncoder
-    }
-}
+// Repo cho toàn bộ module (app, ...) đã khai báo tập trung ở settings.gradle
+// (dependencyResolutionManagement) — không khai lại ở đây để tránh xung đột
+// với FAIL_ON_PROJECT_REPOS.
 
 task clean(type: Delete) {
     delete rootProject.buildDir

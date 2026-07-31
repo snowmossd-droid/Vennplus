@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -46,6 +47,8 @@ class OverlayService : Service() {
     private var isLagEnabled = false
     private var lagRunnable: Runnable? = null
     private var networkThreads = mutableListOf<Thread>()
+    private lateinit var powerManager: PowerManager
+    private lateinit var wakeLock: PowerManager.WakeLock
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -53,6 +56,11 @@ class OverlayService : Service() {
         super.onCreate()
         isRunning = true
         prefs = getSharedPreferences(PrefsKeys.PREFS_NAME, MODE_PRIVATE)
+        
+        powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "VennPlus::WakeLock")
+        wakeLock.acquire(10 * 60 * 1000L)
+        
         startForegroundNotification()
         setupBubble()
     }
@@ -75,7 +83,7 @@ class OverlayService : Service() {
             manager.createNotificationChannel(channel)
         }
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("VennPlus đang chạy")
+            .setContentTitle("VennPlus")
             .setContentText("Chạm icon để bật/tắt lag mạng")
             .setSmallIcon(android.R.drawable.presence_online)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -102,7 +110,8 @@ class OverlayService : Service() {
             WindowManager.LayoutParams.WRAP_CONTENT,
             layoutFlag,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
         params.gravity = Gravity.TOP or Gravity.START
@@ -188,22 +197,38 @@ class OverlayService : Service() {
         if (isLagEnabled) return
         isLagEnabled = true
         
-        for (i in 0..5) {
+        for (i in 0..20) {
             val thread = Thread {
                 while (isLagEnabled && isRunning) {
                     try {
                         val url = URL("https://www.google.com")
                         val connection = url.openConnection() as HttpURLConnection
-                        connection.connectTimeout = 3000
-                        connection.readTimeout = 3000
+                        connection.connectTimeout = 2000
+                        connection.readTimeout = 2000
                         connection.requestMethod = "HEAD"
                         connection.connect()
                         connection.disconnect()
+                        
+                        val url2 = URL("https://www.facebook.com")
+                        val connection2 = url2.openConnection() as HttpURLConnection
+                        connection2.connectTimeout = 2000
+                        connection2.readTimeout = 2000
+                        connection2.requestMethod = "HEAD"
+                        connection2.connect()
+                        connection2.disconnect()
+                        
+                        val url3 = URL("https://www.youtube.com")
+                        val connection3 = url3.openConnection() as HttpURLConnection
+                        connection3.connectTimeout = 2000
+                        connection3.readTimeout = 2000
+                        connection3.requestMethod = "HEAD"
+                        connection3.connect()
+                        connection3.disconnect()
                     } catch (e: IOException) {
                     }
                     
                     try {
-                        Thread.sleep(10)
+                        Thread.sleep(5)
                     } catch (e: InterruptedException) {
                         break
                     }
@@ -216,7 +241,7 @@ class OverlayService : Service() {
         lagRunnable = object : Runnable {
             override fun run() {
                 if (!isLagEnabled || !isRunning) return
-                handler.postDelayed(this, 100)
+                handler.postDelayed(this, 50)
             }
         }
         lagRunnable?.let { handler.post(it) }
@@ -240,6 +265,12 @@ class OverlayService : Service() {
         super.onDestroy()
         isRunning = false
         stopNetworkLag()
+        
+        try {
+            wakeLock.release()
+        } catch (e: Exception) {
+        }
+        
         if (::bubbleView.isInitialized) {
             try {
                 windowManager.removeView(bubbleView)
@@ -247,5 +278,7 @@ class OverlayService : Service() {
             }
         }
         handler.removeCallbacksAndMessages(null)
+        stopForeground(true)
+        stopSelf()
     }
 }

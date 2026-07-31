@@ -1,23 +1,33 @@
-name: Unzip
+name: Build APK
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  unzip:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Extract
-        run: unzip -o stream.zip
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-      - name: Commit extracted files
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add .
-          git commit -m "Extract zip" || echo "Nothing to commit"
-          git push
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build debug APK
+        working-directory: TikTokRtmpStreamer
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: TikTokRtmpStreamer/app/build/outputs/apk/debug/app-debug.apk
